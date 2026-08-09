@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var pausedForInactivity = false
     @State private var showsOverlayToolbar = true
     @State private var toolbarHideWorkItem: DispatchWorkItem?
+    @State private var activeMenuIDs = Set<ObjectIdentifier>()
+    @State private var isToolbarPopoverPresented = false
 
     var body: some View {
         ZStack {
@@ -88,17 +90,22 @@ struct ContentView: View {
             }
 
         }
+        .ignoresSafeArea(.container, edges: .top)
         .frame(minWidth: 480, minHeight: 320)
         .contentShape(Rectangle())
         .navigationTitle(session.gameTitle.isEmpty ? "mGBA" : session.gameTitle)
         .overlay(alignment: .top) {
-            if showsOverlayToolbar {
-                GameOverlayToolbar(onHoverChanged: toolbarHoverChanged)
-                    .padding(.top, 12)
-                    .padding(.horizontal, 16)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(50)
-            }
+            GameOverlayToolbar(
+                onHoverChanged: toolbarHoverChanged,
+                onPresentationChanged: toolbarPresentationChanged
+            )
+                .padding(.top, 12)
+                .padding(.horizontal, 16)
+                .opacity(showsOverlayToolbar ? 1 : 0)
+                .offset(y: showsOverlayToolbar ? 0 : -10)
+                .allowsHitTesting(showsOverlayToolbar)
+                .accessibilityHidden(!showsOverlayToolbar)
+                .zIndex(50)
         }
         .animation(.easeOut(duration: 0.22), value: showsOverlayToolbar)
         .onHover { isInside in
@@ -124,6 +131,12 @@ struct ContentView: View {
         .onDisappear {
             toolbarHideWorkItem?.cancel()
             toolbarHideWorkItem = nil
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) {
+            menuTrackingBegan($0)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didEndTrackingNotification)) {
+            menuTrackingEnded($0)
         }
         .onChange(of: session.romURL) { _, url in
             if let url { recentGames.record(url) }
@@ -180,6 +193,29 @@ struct ContentView: View {
         }
     }
 
+    private func toolbarPresentationChanged(_ isPresented: Bool) {
+        isToolbarPopoverPresented = isPresented
+        if isPresented {
+            showToolbar()
+        } else {
+            scheduleToolbarHide(after: 1.4)
+        }
+    }
+
+    private func menuTrackingBegan(_ notification: Notification) {
+        guard showsOverlayToolbar, let menu = notification.object as? NSMenu else { return }
+        activeMenuIDs.insert(ObjectIdentifier(menu))
+        showToolbar()
+    }
+
+    private func menuTrackingEnded(_ notification: Notification) {
+        guard let menu = notification.object as? NSMenu else { return }
+        activeMenuIDs.remove(ObjectIdentifier(menu))
+        if activeMenuIDs.isEmpty {
+            scheduleToolbarHide(after: 1.4)
+        }
+    }
+
     private func showToolbar() {
         toolbarHideWorkItem?.cancel()
         toolbarHideWorkItem = nil
@@ -188,7 +224,12 @@ struct ContentView: View {
 
     private func scheduleToolbarHide(after delay: TimeInterval) {
         toolbarHideWorkItem?.cancel()
+        guard activeMenuIDs.isEmpty, !isToolbarPopoverPresented else {
+            toolbarHideWorkItem = nil
+            return
+        }
         let workItem = DispatchWorkItem {
+            guard activeMenuIDs.isEmpty, !isToolbarPopoverPresented else { return }
             showsOverlayToolbar = false
             toolbarHideWorkItem = nil
         }

@@ -3,6 +3,7 @@ import SwiftUI
 struct GameOverlayToolbar: View {
     @EnvironmentObject private var session: EmulatorSession
     let onHoverChanged: (Bool) -> Void
+    let onPresentationChanged: (Bool) -> Void
 
     var body: some View {
         HStack(spacing: 9) {
@@ -35,7 +36,7 @@ struct GameOverlayToolbar: View {
                 .frame(height: 20)
 
             DisplayToolbarMenu()
-            AudioToolbarControl()
+            AudioToolbarControl(onPresentationChanged: onPresentationChanged)
 
             SettingsLink {
                 Label("Settings", systemImage: "gearshape")
@@ -46,12 +47,12 @@ struct GameOverlayToolbar: View {
         .controlSize(.large)
         .padding(.horizontal, 13)
         .padding(.vertical, 9)
-        .background(.ultraThinMaterial, in: Capsule())
+        .background(.thickMaterial, in: Capsule())
         .overlay {
             Capsule()
-                .stroke(.white.opacity(0.14), lineWidth: 0.5)
+                .stroke(.white.opacity(0.22), lineWidth: 0.75)
         }
-        .shadow(color: .black.opacity(0.24), radius: 14, y: 6)
+        .shadow(color: .black.opacity(0.34), radius: 14, y: 6)
         .onHover(perform: onHoverChanged)
     }
 }
@@ -99,6 +100,7 @@ struct AudioToolbarControl: View {
     @AppStorage("audio.volume") private var volume = 0.8
     @AppStorage("audio.muted") private var muted = false
     @State private var showsPopover = false
+    let onPresentationChanged: (Bool) -> Void
 
     var body: some View {
         Button {
@@ -122,6 +124,9 @@ struct AudioToolbarControl: View {
                 }
             }
             .padding(18)
+        }
+        .onChange(of: showsPopover) { _, isPresented in
+            onPresentationChanged(isPresented)
         }
     }
 

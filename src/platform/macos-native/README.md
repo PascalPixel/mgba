@@ -14,7 +14,8 @@ The generated app is `dist/mGBA.app` and contains an arm64 executable.
 
 ## Native app features
 
-- SwiftUI windows, menus, a floating activity-driven toolbar, and a dedicated Settings scene
+- An edge-to-edge SwiftUI game window with hidden title text, standard traffic lights,
+  an activity-driven floating toolbar, menus, and a dedicated Settings scene
 - Metal-only video output with continuous aspect-fit scaling and filtering preferences
 - Native ROM picker, Finder opening, and drag and drop
 - Persistent recent games on the welcome screen and in the File menu

@@ -16,6 +16,7 @@ struct mGBAApp: App {
                 .environmentObject(recentGames)
         }
         .defaultSize(width: 960, height: 680)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             AppCommands(session: session, recentGames: recentGames)
         }
