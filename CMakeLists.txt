@@ -256,7 +256,7 @@ if(APPLE)
 		add_link_options(LINKER:-no_warn_duplicate_libraries)
 	endif()
 
-	if(NOT CMAKE_SYSTEM_VERSION VERSION_LESS "10.0") # Darwin 10.x is Mac OS X 10.6
+	if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET AND NOT CMAKE_SYSTEM_VERSION VERSION_LESS "10.0") # Darwin 10.x is Mac OS X 10.6
 		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.6")
 	endif()
 	# Not supported until Xcode 9
